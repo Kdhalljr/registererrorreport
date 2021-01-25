@@ -1,0 +1,158 @@
+function pushOntoArray(fileAttachmentArray, SSFiles) {
+  var ATTACHMENTFILEFORMAT = "xlsx";
+  
+  var sheetName = "";
+  var dmList = getDMList();
+
+  while (SSFiles.hasNext()) {
+    var SSFile = SSFiles.next();
+        
+    var url = SSFile.getUrl();
+    url = url.replace("edit?usp=drivesdk", "");
+    
+    var url_ext = "export?" +
+    "exportFormat=" + ATTACHMENTFILEFORMAT +
+      "&format=" + ATTACHMENTFILEFORMAT +
+        "&gridlines=false" + 
+          "&fzr=true"; 
+    
+    var token = ScriptApp.getOAuthToken();
+    var response = UrlFetchApp.fetch(url + url_ext, {
+                                     headers: {
+                                     "Authorization": "Bearer " + token
+                                     }
+                                     });
+    
+    var blob = response.getBlob().setName(SSFile.getName() + "." + ATTACHMENTFILEFORMAT);
+    fileAttachmentArray.push(blob);
+  }
+  
+  return fileAttachmentArray;
+}
+
+
+function createMGRFileAttachmentArray(store) {
+  var fileAttachmentArray = [];
+  
+  var storeSSFolder = getStoreSSFolder();
+  var storeSSFiles = storeSSFolder.getFilesByName(store);
+  
+  fileAttachmentArray = pushOntoArray(fileAttachmentArray, storeSSFiles)
+      
+  return fileAttachmentArray;
+}
+
+
+
+function createDMFileAttachmentArray(dm) {
+  var fileAttachmentArray = [];
+
+  var DMsHMsArray = getHMByDM(dm);
+  var DMSSSFolder = getDMSummarySSFolder();
+  var storeSSFolder = getStoreSSFolder();
+  var storeList = getStoreListByDM(dm);
+  
+  // DM's District Summary
+  var DMSSFiles = DMSSSFolder.getFilesByName(dm);
+  fileAttachmentArray = pushOntoArray(fileAttachmentArray, DMSSFiles);
+  
+  // DMsHMs
+  for (var i = 0; i < DMsHMsArray.length; i++) {
+    var DMsHM = DMsHMsArray[i];
+    
+    if (DMsHM != null) {
+      var HMSSFiles = DMSSSFolder.getFilesByName(DMsHM);
+      fileAttachmentArray = pushOntoArray(fileAttachmentArray, HMSSFiles);
+    }
+  }
+    
+  return fileAttachmentArray;
+}
+
+
+
+function createAllStoresFileAttachmentArray() {
+  var fileAttachmentArray = [];
+  
+  var allStoresSSFolder = getAllStoresSSFolder()
+  var allStoresSSFiles = allStoresSSFolder.getFiles()
+  
+  fileAttachmentArray = pushOntoArray(fileAttachmentArray, allStoresSSFiles);
+    
+  return fileAttachmentArray;
+}
+
+
+
+function sendEmailToMgr(store) {
+  var email = getMgrEmail(store);
+
+  var subject = getPreviousMonth("name") + " P" + (getAccountingPeriodNum()-1) + " Register Error Summary";
+  
+  var message = "Hi " + store + ",\n\n\tHere is your monthly register error report summary for the month of " + getPreviousMonth("full") + ".";
+  
+  var fileAttachmentArray = createMGRFileAttachmentArray(store);
+  
+  if (MailApp.getRemainingDailyQuota() == 0) {
+    var SHEETNAME = "Unsent Emails";
+    
+    var ss = SpreadsheetApp.openById(getUnsentEmailsSSId());
+    var ssSheet = ss.getSheetByName(SHEETNAME);
+    ssSheet.appendRow([store]);
+  }
+  else {
+    MailApp.sendEmail(email, subject, message,  {attachments: fileAttachmentArray});
+  }
+}
+
+
+
+function sendEmailToDM(dm) {
+  var email = getDMInfo(dm, "email");
+
+  var subject = getPreviousMonth("name") + " P" + (getAccountingPeriodNum()-1) + " Register Error Summary";
+
+  var message = "Hi " + getDMInfo(dm, "name") + ",\n\n\tHere are your monthly register error report summaries for the month of " + getPreviousMonth("full") + ".";
+  
+  var fileAttachmentArray = createDMFileAttachmentArray(dm)
+  
+  if (MailApp.getRemainingDailyQuota() == 0) {
+    var SHEETNAME = "Unsent Emails";
+    
+    var ss = SpreadsheetApp.openById(getUnsentEmailsSSId());
+    var ssSheet = ss.getSheetByName(SHEETNAME);
+    ssSheet.appendRow([dm]);
+  }
+  else {
+    MailApp.sendEmail(email, subject, message,  {attachments: fileAttachmentArray});
+  }
+}
+
+
+
+function sendEmailToHQMgmt() {
+  var hqMgmtList = getHQMgmtList();
+  
+  var subject = getPreviousMonth("name") + " P" + (getAccountingPeriodNum()-1) + " Register Error Summary";
+  
+  var fileAttachmentArray = createAllStoresFileAttachmentArray();
+  
+  for (var i = 0; i < hqMgmtList.length; i++) {
+    var email = getHQMgmtInfo(hqMgmtList[i], "email");
+
+    var name = getHQMgmtInfo(hqMgmtList[i], "name");
+    
+    var message = "Hi " + name + ",\n\n\tHere is your monthly register error report summary for the month of " + getPreviousMonth("full") + ".";
+    
+    if (MailApp.getRemainingDailyQuota() == 0) {
+      var SHEETNAME = "Unsent Emails";
+    
+      var ss = SpreadsheetApp.openById(getUnsentEmailsSSId());
+      var ssSheet = ss.getSheetByName(SHEETNAME);
+      ssSheet.appendRow(["All Stores"]);
+    }
+    else {
+      MailApp.sendEmail(email, subject, message,  {attachments: fileAttachmentArray});
+    }
+  }
+}

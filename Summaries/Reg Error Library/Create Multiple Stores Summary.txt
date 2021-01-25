@@ -1,0 +1,135 @@
+// Creates summary for all stores
+function createMultipleStoresSummary(recipient, storeSSList) {
+  var INDEXOFFSET = 1;
+  var TOTALVALUECOLINDEX = 1;
+  var NETERRORCOLNUM = 6;
+  var OVERSHORTCOLNUM = 7;
+  var VALUEINDEX = 0;
+  var OVERORUNDERINDEX = 1;
+  var ERRORTOTALCOLNUM = 2;
+  var SORTBYCOLNUM = 1;
+  var HEADERROWNUM = 1;
+  var OVERCOLOR = "green";
+  var SHORTCOLOR = "red";
+  var OVERVAL = "Over";
+  var SHORTVAL = "Short";
+  var DISTRICTCOLUMNNUM = 2;
+  var FIRSTDATAROWNUM = 2;
+  var FIRSTDATACOLNUM = 1;
+  var FIRSTCOLLETTER = "A";
+  var ERRORLOGOVERCOLLETTER = "E";
+  var ERRORLOGSHORTCOLLETTER = "F";
+  var SUMMARYTOTALALIGNMENT = "right";
+  var ALLSTORESRECIPIENT = "All Stores";
+  var STORELOGSSHEETNAME = "Form Responses";
+  var ALLSTORESSUMMARYSHEETNAME = "All Stores Summary";
+  var DMSUMMARYSHEETNAME = "DM Summary";
+  var ALLSTORESSUMMARYSSSHEETHEADER = ["Store", "District", "Number of Register Errors", "Over Amount", "Short Amount", "Net Error Value", "Over or Short"];
+  
+  var storeSSFolder = getStoreSSFolder();
+  
+  var outputStoreSSFile;
+  var outputStoreSS;
+  var outputStoreSSSheet;
+  
+  if (recipient == ALLSTORESRECIPIENT) {
+    outputStoreSS = SpreadsheetApp.openById(getAllStoresSSId());
+    outputStoreSSSheet = outputStoreSS.getSheetByName(ALLSTORESSUMMARYSHEETNAME);
+  }
+  else {
+    outputStoreSSFile = getDMSummarySSFile(recipient);
+    outputStoreSS = SpreadsheetApp.open(outputStoreSSFile);
+    outputStoreSSSheet = outputStoreSS.getSheetByName(DMSUMMARYSHEETNAME);
+  }
+    
+  var outputStoreLastColumn = outputStoreSSSheet.getLastColumn();
+  
+  var lastRow = outputStoreSSSheet.getLastRow();
+  if (lastRow > 1) {
+    outputStoreSSSheet.getRange(FIRSTCOLLETTER + FIRSTDATAROWNUM + ":" + outputStoreSSSheet.getLastColumn() + lastRow).clear();
+  }
+  
+  for (var store in storeSSList) {
+    var storeSS = storeSSList[store];
+    var storeSSSheet = storeSS.getSheetByName(STORELOGSSHEETNAME);
+    var storeSSRange = storeSSSheet.getDataRange();
+    var storeSSValues = storeSSRange.getValues();
+    
+    var storeSSNetErrorTotalRow = storeSSSheet.getLastRow();
+    var storeSSShortErrorTotalRow = storeSSNetErrorTotalRow - 1;
+    var storeSSOverErrorTotalRow = storeSSNetErrorTotalRow - 2;
+    var storeSSNumErrorsTotalRow = storeSSNetErrorTotalRow - 3;
+    var storeSSErrorLogRowNum = storeSSNetErrorTotalRow - 4;
+    
+    // Calculates Net Error Value
+    Logger.log(storeSSValues[storeSSNetErrorTotalRow-INDEXOFFSET][TOTALVALUECOLINDEX])
+    Logger.log(store)
+    var outputStoreNetErrorValueArray = storeSSValues[storeSSNetErrorTotalRow-INDEXOFFSET][TOTALVALUECOLINDEX].split(" ");
+    var outputStoreNetErrorValue = "=ABS(" + ERRORLOGOVERCOLLETTER + storeSSOverErrorTotalRow + "-" + ERRORLOGSHORTCOLLETTER + storeSSShortErrorTotalRow + ")";
+    
+    // Adds Store Summaries
+    outputStoreSSSheet.appendRow([storeSSList[store].getName(),
+                                  getDistrictByStore(storeSSList[store].getName()),
+                                  Number(storeSSValues[storeSSNumErrorsTotalRow-INDEXOFFSET][TOTALVALUECOLINDEX]),
+                                  Number(storeSSValues[storeSSOverErrorTotalRow-INDEXOFFSET][TOTALVALUECOLINDEX]),
+                                  Number(storeSSValues[storeSSShortErrorTotalRow-INDEXOFFSET][TOTALVALUECOLINDEX]),
+                                  Number(outputStoreNetErrorValueArray[VALUEINDEX]),
+                                  outputStoreNetErrorValueArray[OVERORUNDERINDEX]]);
+    
+    var outputStoreLastRowNum = outputStoreSSSheet.getLastRow();
+    
+    // Adds colors to each net error value for each store row
+    if (outputStoreSSSheet.getRange(columnToLetter(OVERSHORTCOLNUM) + outputStoreLastRowNum).getValue() == SHORTVAL) {
+      outputStoreSSSheet.getRange(columnToLetter(NETERRORCOLNUM) + outputStoreLastRowNum + ":" + columnToLetter(OVERSHORTCOLNUM) + outputStoreLastRowNum).setBackground(SHORTCOLOR)
+    }
+    else if (outputStoreSSSheet.getRange(columnToLetter(OVERSHORTCOLNUM) + outputStoreLastRowNum).getValue() == OVERVAL){
+      outputStoreSSSheet.getRange(columnToLetter(NETERRORCOLNUM) + outputStoreLastRowNum + ":" + columnToLetter(OVERSHORTCOLNUM) + outputStoreLastRowNum).setBackground(OVERCOLOR)
+    }
+    
+    // Align over or short cell
+    outputStoreSSSheet.getRange(columnToLetter(outputStoreLastColumn) + outputStoreLastRowNum).setHorizontalAlignment(SUMMARYTOTALALIGNMENT);
+    
+    // Deletes sheet if already exists (store name)
+    var outputStoreSSSheetList = outputStoreSS.getSheets();
+    var sheetNameToDelete = storeSS.getName();
+    for (var i = 0; i < outputStoreSSSheetList.length; i++) {
+      if (outputStoreSSSheetList[i].getName() == sheetNameToDelete) {     
+        outputStoreSS.deleteSheet(outputStoreSS.getSheetByName(sheetNameToDelete));
+        break;
+      }
+    }
+    
+    // Deletes copy of store ss sheet (Form Responses)
+    outputStoreSSSheetList = outputStoreSS.getSheets();
+    for (var i = 1; i <= 50; i++) {
+      sheetNameToDelete = "Copy of " + storeSSSheet.getName() + " " + i;
+      for (var j = 0; j < outputStoreSSSheetList.length; j++) {
+        if (outputStoreSSSheetList[j].getName() == sheetNameToDelete) {
+          outputStoreSS.deleteSheet(outputStoreSSSheetList[j]);
+          break;
+        }
+      }
+    }
+    
+    // Copies store SS Sheet to its own tab
+    storeSSSheet.copyTo(outputStoreSS);
+    
+    // Renames store SS Sheet
+    var copyOfSSSheet = outputStoreSS.getSheetByName("Copy of " + storeSSSheet.getName());
+    copyOfSSSheet.setName(storeSS.getName());
+  }
+  
+  // Append Summary Totals
+  appendSummaryTotals(outputStoreSSSheet);
+  
+  for (var i = 1; i <= outputStoreLastColumn; i++) {
+    outputStoreSSSheet.autoResizeColumn(i);
+  }
+  
+  // DM summaries
+  if(recipient == ALLSTORESRECIPIENT) {
+    createDistrictSummary()
+  }
+  
+  SpreadsheetApp.flush();
+}

@@ -1,0 +1,22 @@
+function DMdoGetFxn() {
+  var FIRSTSTORESUMMARYINDEX = 1;
+  var SHEETNAME = "DM Summary";
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssName = ss.getName();
+
+  var DMStoresSSMap = {};
+  var storeSSMap = createSSMapping();
+  var storeList = getStoreListByDM(ssName).sort();
+
+  for (var j = 0; j < storeList.length; j++) {      
+    DMStoresSSMap[storeList[j]] = storeSSMap[storeList[j]];
+  }
+  
+  quicksort(DMStoresSSMap, FIRSTSTORESUMMARYINDEX, (DMStoresSSMap.length-1));
+  
+  createMultipleStoresSummary(ssName, DMStoresSSMap);
+  sendEmailToDM(ssName);
+  NotifyComplete(ssName);
+}

@@ -1,0 +1,57 @@
+function swap(arr, i, j){
+   var temp = arr[i];
+   arr[i] = arr[j];
+   arr[j] = temp;
+}
+
+
+
+function partitiontArray(arr, pivot, left, right){
+  var pivotValue = arr[pivot].getName();
+  var partitionIndex = left;
+
+  for(var i = left; i < right; i++){
+    if(arr[i].getName() < pivotValue){
+      swap(arr, i, partitionIndex);
+      partitionIndex++;
+    }
+  }
+  
+  swap(arr, right, partitionIndex);
+  return partitionIndex;
+}
+
+function quicksort(arr, left, right){
+  var pivot;
+  var partitionIndex;
+
+  if(left < right){
+    pivot = right;
+    partitionIndex = partitiontArray(arr, pivot, left, right);
+    
+    //sort left and right
+    quicksort(arr, left, partitionIndex - 1);
+    quicksort(arr, partitionIndex + 1, right);
+  }
+  
+  return arr;
+}
+
+
+
+function sortHashArray(hashArray) {
+  var keyList = [];
+  var sortedHashArray = {};
+  
+  for (var sheet in hashArray) {
+    keyList.push(sheet);
+  }
+  
+  keyList.sort();
+  
+  for (var i = 0; i < keyList.length; i++) {
+    sortedHashArray[keyList[i]] = hashArray[keyList[i]];
+  }
+  
+  return sortedHashArray;
+}

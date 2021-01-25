@@ -1,0 +1,102 @@
+function createDistrictSummary() {
+  var TOTALVALUECOLINDEX = 1;
+  var NETERRORCOLNUM = 6;
+  var OVERSHORTCOLNUM = 7;
+  var VALUEINDEX = 0;
+  var OVERORUNDERINDEX = 1;
+  var FIRSTCOLLETTER = "A";
+  var OVERCOLOR = "green"
+  var SHORTCOLOR = "red";
+  var OVERVAL = "Over";
+  var SHORTVAL = "Short";
+  var SUMMARYTOTALALIGNMENT = "right";
+  var HEADERROWNUM = 1;
+  var FIRSTDATAROWINDEX = 1;
+  var FIRSTDATAROWNUM = 2
+  var FIRSTDATACOLNUM = 1;
+  var DISTRICTCOLUMNNUM = 2;
+  var DMSUMMARYSHEETNAME = "DM Summary";
+  var ALLSTORESDISTRICTSUMMARIESSHEETNAME = "Districts Summary";
+  var ALLSTORESDISTRICTSUMMARYSSSHEETHEADER = ["DM/HM", "District", "Number of Register Errors", "Over Amount", "Short Amount", "Net Error Value", "Over or Short"];
+  
+  var AllStoresDistrictSummarySS = SpreadsheetApp.openById(getAllStoresSSId());
+  var AllStoresDistrictSummarySSSheet = AllStoresDistrictSummarySS.getSheetByName(ALLSTORESDISTRICTSUMMARIESSHEETNAME);
+  var AllStoresDistrictLastColumn = AllStoresDistrictSummarySSSheet.getLastColumn();
+  
+  var AllStoresDistrictLastRow;
+  
+  var DMSummarySSFolder = getDMSummarySSFolder();
+  var DMSummarySSFiles = DMSummarySSFolder.getFiles();
+  
+  var lastRow = AllStoresDistrictSummarySSSheet.getLastRow();
+  if (lastRow > 1) {
+    AllStoresDistrictSummarySSSheet.getRange(FIRSTCOLLETTER + FIRSTDATAROWNUM + ":" + AllStoresDistrictSummarySSSheet.getLastColumn() + lastRow).clear();
+  }
+  
+  while(DMSummarySSFiles.hasNext()) {
+    var DMSummarySSFile = DMSummarySSFiles.next();
+    var DMSummarySS = SpreadsheetApp.open(DMSummarySSFile);
+    var DMSummarySSSheet = DMSummarySS.getSheetByName(DMSUMMARYSHEETNAME)
+    var DMSummarySSRange = DMSummarySSSheet.getDataRange();
+    var DMSummarySSValues = DMSummarySSRange.getValues();
+    
+    var DMSummaryLastRowIndex = DMSummarySSSheet.getLastRow();
+    var numErrorsRowIndex = DMSummaryLastRowIndex-4;
+    var overErrorRowIndex = DMSummaryLastRowIndex-3;
+    var shortErrorRowIndex = DMSummaryLastRowIndex-2;
+    var netErrorRowIndex = DMSummaryLastRowIndex-1;
+        
+    var DMSummaryNetErrorValueArray = DMSummarySSValues[netErrorRowIndex][TOTALVALUECOLINDEX].split(" ");
+    var DMName = DMSummarySSFile.getName();
+        
+    AllStoresDistrictSummarySSSheet.appendRow([
+      DMName,
+      getDMInfo(DMName, "district"),
+      Number(DMSummarySSValues[numErrorsRowIndex][TOTALVALUECOLINDEX]),
+      Number(DMSummarySSValues[overErrorRowIndex][TOTALVALUECOLINDEX]),
+      Number(DMSummarySSValues[shortErrorRowIndex][TOTALVALUECOLINDEX]),
+      Number(DMSummaryNetErrorValueArray[VALUEINDEX]),
+      DMSummaryNetErrorValueArray[OVERORUNDERINDEX]]);
+    
+    AllStoresDistrictLastRow = AllStoresDistrictSummarySSSheet.getLastRow();
+    
+    // Adds colors to each net error value for each store row
+    if (DMSummaryNetErrorValueArray[OVERORUNDERINDEX] == SHORTVAL) {
+      AllStoresDistrictSummarySSSheet.getRange(AllStoresDistrictLastRow, NETERRORCOLNUM).setBackground(SHORTCOLOR)
+      AllStoresDistrictSummarySSSheet.getRange(AllStoresDistrictLastRow, OVERSHORTCOLNUM).setBackground(SHORTCOLOR)
+    }
+    else if (DMSummaryNetErrorValueArray[OVERORUNDERINDEX] == OVERVAL){
+      AllStoresDistrictSummarySSSheet.getRange(AllStoresDistrictLastRow, NETERRORCOLNUM).setBackground(OVERCOLOR)
+      AllStoresDistrictSummarySSSheet.getRange(AllStoresDistrictLastRow, OVERSHORTCOLNUM).setBackground(OVERCOLOR)
+    }
+    
+    AllStoresDistrictSummarySSSheet.getRange(columnToLetter(AllStoresDistrictLastColumn) + AllStoresDistrictLastRow).setHorizontalAlignment(SUMMARYTOTALALIGNMENT);
+  }
+  
+  var numErrorDataPoints = AllStoresDistrictLastColumn;
+  for (var i = 1; i <= numErrorDataPoints; i++) {
+    AllStoresDistrictSummarySSSheet.autoResizeColumn(i);
+  }
+  
+  // Freezes first row
+  AllStoresDistrictSummarySSSheet.setFrozenRows(HEADERROWNUM);
+  
+  // Adds border
+  AllStoresDistrictSummarySSSheet.getRange(FIRSTCOLLETTER + HEADERROWNUM + ":" + columnToLetter(AllStoresDistrictLastColumn) + (AllStoresDistrictLastRow)).setBorder(true, true, true, true, true, true);  
+  
+  // Sorts DM Summary rows
+  var AllStoresDistrictSummarySSRange = AllStoresDistrictSummarySSSheet.getRange(columnToLetter(FIRSTDATACOLNUM) + FIRSTDATAROWNUM + ":" + columnToLetter(AllStoresDistrictLastColumn) + AllStoresDistrictLastRow);
+  AllStoresDistrictSummarySSRange.sort(DISTRICTCOLUMNNUM);
+  
+  // Deletes unused cells
+  var lastRow = AllStoresDistrictSummarySSSheet.getLastRow();
+  var maxRow = AllStoresDistrictSummarySSSheet.getMaxRows();
+  var lastCol = AllStoresDistrictSummarySSSheet.getLastColumn();
+  var maxCol = AllStoresDistrictSummarySSSheet.getMaxColumns();
+  if (maxRow > lastRow) {
+    AllStoresDistrictSummarySSSheet.deleteRows(lastRow+1, maxRow-lastRow);
+  }
+  if (maxCol > lastCol) {
+    AllStoresDistrictSummarySSSheet.deleteColumns(lastCol+1, maxCol-lastCol);
+  }
+}

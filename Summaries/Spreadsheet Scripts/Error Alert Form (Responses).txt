@@ -1,0 +1,15 @@
+/*
+  1.	Report sent at 12:01am on the 1st of each month for the prior month, i.e., data for July is sent at 12:01a, on August 1st.
+  2.	Each manager gets report with just their store’s error.
+  3.	Each DM gets one report for all their stores, with each store on its own tab labeled with the store code. This needs to be easily editable because DM’s change stores regularly.
+  4.    The CRO should receive one report which summarizes all the stores and gives a final companywide total
+  5.	Data should be sorted by date. The date should be formatted as MM/dd/yyyy.
+  6.	Cells should auto-fit their contents.
+*/
+
+
+  
+// Create summaries and email to DMs and Mgrs
+function doGet(e) {  
+  RegErrorReportLibrary.createStoresSummary();
+}

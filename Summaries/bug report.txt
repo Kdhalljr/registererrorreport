@@ -1,0 +1,2 @@
+1. GAS: all stores spreadsheet is not attached to email for some reason
+2. GAE: Crontab is resetting every time it is triggered

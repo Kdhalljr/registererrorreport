@@ -1,0 +1,83 @@
+// Helper functions
+function getStoreSSFolder() {
+  return DriveApp.getFolderById("xxxxxx");
+}
+
+
+
+function getAllStoresSSFolder() {
+  return DriveApp.getFolderById("xxxxxx");
+}
+
+
+
+function getAllStoresSSId() {
+  return "xxxxxx";
+}
+
+
+
+function getDMSummarySSFolder() {
+  return DriveApp.getFolderById("xxxxxx");
+}
+
+
+
+function getErrorReportArchiveSSId() {
+  return "xxxxxx";
+}
+
+
+
+function getLaurasErrorReportCopySSId() {
+  return "xxxxxx";
+}
+
+
+
+function getCompletionNotificationSSId() {
+  return "xxxxxx";
+}
+
+
+
+function getMgmtInfoSSId() {
+  return "xxxxxx"  
+}
+
+
+
+function getDMSummarySSFile(dm) {
+  switch (dm) {
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+    case "xxxxxx":
+      return DriveApp.getFileById("xxxxxx");
+  }
+}
+
+
+
+function getUnsentEmailsSSId() {
+  return "xxxxxx";
+}

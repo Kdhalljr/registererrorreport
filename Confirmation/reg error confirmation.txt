@@ -1,0 +1,82 @@
+/*
+  After adding script to project, click edit, current project triggers, add a trigger, from the dropdowns: select 
+    the function you want to run
+    "From form"
+    "On form submit"
+    Set error notifications to be sent immediately
+  The selected script will run every time your form has been submitted
+*/
+
+function getStoreFrontEmails(store) {
+  if ((store == "xxxxxx") || (store == "xxxxxx") || (store == "xxxxxx") || (store == "xxxxxx")) {
+    return [store + "xxxxxx@xxxxxx.com", store + "xxxxxx@xxxxxx.com"]
+  }
+  else {
+    return [store + "xxxxxx@xxxxxx.com", store + "xxxxxx@xxxxxx.com"]
+  }
+}
+
+
+
+function getCurrentDay() {
+  return Number(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd"));
+}
+
+
+
+function getDay(time) {
+  return Number(Utilities.formatDate(new Date(time), Session.getScriptTimeZone(), "dd"));
+}
+
+
+
+function getResponseNum(compareString) {
+  var responseNum = 0;
+  var formResponses = FormApp.getActiveForm().getResponses();
+  
+  for (var i = formResponses.length-1; i >= 0; i--) {
+    var formResponse = formResponses[i];
+    var itemResponses = formResponse.getItemResponses();
+    if (getDay(formResponse.getTimestamp()) == getCurrentDay()) {
+      if (itemResponses[0].getResponse().toString() == compareString) {
+        responseNum++;
+      }
+    }
+    else {
+      return responseNum.toString();
+    }   
+  }
+}
+
+
+
+function onSubmit(e) {
+  var FORMRESPONSESSHEETNAME = "Form Responses 1";
+  var STORECODEITEMRESPONSEINDEX = 0;
+  
+  
+  var message = "";
+  
+  var laurasErrorReportCopySS = SpreadsheetApp.openById(RegErrorReportLibrary.getLaurasErrorReportCopySSId());
+  var laurasErrorReportCopySSSheet = laurasErrorReportCopySS.getSheetByName(FORMRESPONSESSHEETNAME);
+  
+  var formResponse = e.response;
+  var itemResponses = formResponse.getItemResponses();
+  var formattedDate = Utilities.formatDate(formResponse.getTimestamp(), "PST", "MM/dd/yyyy");
+  
+  var email = getStoreFrontEmails(itemResponses[STORECODEITEMRESPONSEINDEX].getResponse());
+  
+  var subject = itemResponses[STORECODEITEMRESPONSEINDEX].getResponse() + " " + formattedDate + " Register Error #" + getResponseNum(itemResponses[STORECODEITEMRESPONSEINDEX].getResponse());
+  
+  var array = [formResponse.getTimestamp()];
+  for (var i = 0; i < itemResponses.length; i++) {
+    var itemresponse = itemResponses[i].getResponse().toString();
+    message += itemResponses[i].getItem().getTitle() + ": " + itemresponse + "\n\n";
+    array.push(itemresponse)
+  }
+  
+  // copies to laura's spreadsheet
+  laurasErrorReportCopySSSheet.appendRow(array);
+
+  MailApp.sendEmail(email, subject, message); 
+}

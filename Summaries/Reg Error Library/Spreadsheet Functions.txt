@@ -1,0 +1,230 @@
+function columnToLetter(column) {
+  var temp, letter = '';
+  while (column > 0)
+  {
+    temp = (column - 1) % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    column = (column - temp - 1) / 26;
+  }
+  return letter;
+}
+
+
+// Create spreadsheet mapping
+function createSSMapping() {
+  var storeSSMap = {};
+  var storeSSFolder = getStoreSSFolder();
+  var storeSSFiles = storeSSFolder.getFiles();
+  while (storeSSFiles.hasNext()) {
+    var storeSSFile = storeSSFiles.next();
+    storeSSMap[storeSSFile.getName()] = SpreadsheetApp.openById(storeSSFile.getId());
+  }
+  
+  return storeSSMap;
+}
+
+
+
+function resizeColumns(ssSheet) {
+  for (var i = 1; i <= ssSheet.getLastColumn(); i++) {
+    ssSheet.autoResizeColumn(i);
+  }
+}
+
+
+
+function deleteOldSummary(ssSheet) {
+  var FIRSTDATACOLLETTER = "A";
+  var FIRSTDATAROWNUM = 2;
+  var INDEXOFFSET = 1;
+  
+  var vals = ssSheet.getDataRange().getValues();
+  
+  for (var i = vals.length-1; i > 0; i--) {
+    if ((vals[i][0] == "Num Errors") ||
+        (vals[i][0] == "Over Error Value") ||
+      (vals[i][0] == "Short Error Value") ||
+        (vals[i][0] == "Net Error Value") ||
+          (vals[i][0] == "")) {
+            ssSheet.deleteRow(i+INDEXOFFSET);
+          }
+    else {
+      break;
+    }
+  }
+}
+
+
+
+// Append Store SS Totals
+function appendStoreSSTotals(ssSheet) {
+  var INDEXOFFSET = 1;
+  var NUMDECIMALPOINTSINADOLLAR = 2;
+  var OVERSHORTCOL = 7;
+  var ERRORAMTCOL = 6;
+  var OVERCOLOR = "green"
+  var SHORTCOLOR = "red";
+  var SUMMARYTOTALALIGNMENT = "right";
+  var OVERVAL = "Over";
+  var SHORTVAL = "Short";
+  var SHEETNAME = "Form Responses";
+  var FIRSTDATAROWNUM = 2;
+  var ERRORLOGERRORVALUECOLLETTER = "G";
+  var ERRORLOGOVERORSHORTCOLLETTER = "H";
+  var SUMMARYTOTALHEADERCOLLETTER = "A";
+  var SUMMARYTOTALDATACOLLETTER = "B";
+  var NUMERRORSHEADER = "Num Errors";
+  var OVERHEADER = "Over Error Value";
+  var SHORTHEADER = "Short Error Value";
+  var NETERRORHEADER = "Net Error Value";
+  
+  var overErrorValue = 0;
+  var shortErrorValue = 0;
+  var netErrorValue = 0;
+  
+  deleteOldSummary(ssSheet)
+  
+  var ssRange = ssSheet.getDataRange();
+  var ssValues = ssRange.getValues();
+  var lastErrorLogRowNum = ssSheet.getLastRow();
+  var numErrorsTotalRow = lastErrorLogRowNum + 1;
+  var overErrorTotalRow = lastErrorLogRowNum + 2;
+  var shortErrorTotalRow = lastErrorLogRowNum + 3;
+  var netErrorTotalRow = lastErrorLogRowNum + 4;
+  
+  // Sets borders for error reports
+  ssRange.setBorder(true, true, true, true, true, true);
+  
+  // Calculates error values, colors, and aligns error value cells
+  for (var i = 1; i < ssValues.length; i++) {
+    ssSheet.getRange(ERRORLOGOVERORSHORTCOLLETTER + (i+INDEXOFFSET)).setHorizontalAlignment(SUMMARYTOTALALIGNMENT);
+    if (ssValues[i][OVERSHORTCOL] == SHORTVAL) {
+      if (typeof ssValues[i][ERRORAMTCOL] == "number") {
+        netErrorValue -= Number(ssValues[i][ERRORAMTCOL]);
+        shortErrorValue += Number(ssValues[i][ERRORAMTCOL]);
+      }
+      ssSheet.getRange(ERRORLOGERRORVALUECOLLETTER + (i+INDEXOFFSET) + ":" + ERRORLOGOVERORSHORTCOLLETTER + (i+INDEXOFFSET)).setBackground(SHORTCOLOR);
+    }
+    else if (ssValues[i][OVERSHORTCOL] == OVERVAL) {
+      if (typeof ssValues[i][ERRORAMTCOL] == "number") {
+        netErrorValue += Number(ssValues[i][ERRORAMTCOL]);
+        overErrorValue += Number(ssValues[i][ERRORAMTCOL]);
+      }
+      ssSheet.getRange(ERRORLOGERRORVALUECOLLETTER + (i+INDEXOFFSET) + ":" + ERRORLOGOVERORSHORTCOLLETTER + (i+INDEXOFFSET)).setBackground(OVERCOLOR);
+    }
+  }
+  
+  // Appends Error totals
+  ssSheet.appendRow([NUMERRORSHEADER, lastErrorLogRowNum-1]);
+  ssSheet.appendRow([OVERHEADER, overErrorValue]);
+  ssSheet.appendRow([SHORTHEADER, shortErrorValue]);
+  
+  ssSheet.getRange(ERRORLOGERRORVALUECOLLETTER + numErrorsTotalRow + ":" + ERRORLOGOVERORSHORTCOLLETTER + netErrorTotalRow).clear();
+  
+  if (netErrorValue < 0) {
+    ssSheet.appendRow([NETERRORHEADER, Math.abs(netErrorValue).toFixed(NUMDECIMALPOINTSINADOLLAR) + " " + SHORTVAL]);
+    ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + netErrorTotalRow).setBackground(SHORTCOLOR);
+  }
+  else {
+    ssSheet.appendRow([NETERRORHEADER, Math.abs(netErrorValue).toFixed(NUMDECIMALPOINTSINADOLLAR) + " " + OVERVAL]);
+    ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + netErrorTotalRow).setBackground(OVERCOLOR);
+  }
+  
+  ssSheet.getRange(SUMMARYTOTALHEADERCOLLETTER + numErrorsTotalRow + ":" + SUMMARYTOTALDATACOLLETTER + netErrorTotalRow).setBorder(true, true, true, true, true, true);
+  
+  ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + (netErrorTotalRow)).setHorizontalAlignment(SUMMARYTOTALALIGNMENT);
+  
+  // Deletes unused cells
+  var lastRow = ssSheet.getLastRow();
+  var maxRow = ssSheet.getMaxRows();
+  var lastCol = ssSheet.getLastColumn();
+  var maxCol = ssSheet.getMaxColumns()
+  if (maxRow > lastRow) {
+    ssSheet.deleteRows(lastRow+1, maxRow-lastRow);
+  }
+  if (maxCol > lastCol) {
+    ssSheet.deleteColumns(lastCol+1, maxCol-lastCol);
+  }
+  
+  
+  resizeColumns(ssSheet);
+  
+  SpreadsheetApp.flush();
+}
+
+
+
+// Append summary totals to spreadsheet
+function appendSummaryTotals(ssSheet) {
+  var INDEXOFFSET = 1;
+  var OVERCOLOR = "green"
+  var SHORTCOLOR = "red";
+  var SUMMARYTOTALALIGNMENT = "right";
+  var OVERVAL = "Over";
+  var SHORTVAL = "Short";
+  var SHEETNAME = "Form Responses";
+  var FIRSTDATAROWNUM = 2;
+  var ERRORLOGNUMERRORSLETTER = "C";
+  var ERRORLOGOVERCOLLETTER = "D";
+  var ERRORLOGSHORTCOLLETTER = "E";
+  var ERRORLOGNETERRORCOLLETTER = "G";
+  var ERRORLOGOVERORSHORTCOLLETTER = "H";
+  var SUMMARYTOTALHEADERCOLLETTER = "A";
+  var SUMMARYTOTALDATACOLLETTER = "B";
+  var NUMERRORSHEADER = "Num Errors";
+  var OVERHEADER = "Over Error Value";
+  var SHORTHEADER = "Short Error Value";
+  var NETERRORHEADER = "Net Error Value";
+  
+  deleteOldSummary(ssSheet)
+  
+  var ssRange = ssSheet.getDataRange();
+  var ssValues = ssRange.getValues();
+  var lastErrorLogRowNum = ssSheet.getLastRow();
+  var numErrorsTotalRow = lastErrorLogRowNum + 1;
+  var overErrorTotalRow = lastErrorLogRowNum + 2;
+  var shortErrorTotalRow = lastErrorLogRowNum + 3;
+  var netErrorTotalRow = lastErrorLogRowNum + 4;
+  
+  // Sets borders for error reports
+  ssRange.setBorder(true, true, true, true, true, true);
+  
+  SpreadsheetApp.flush();
+  
+  ssSheet.getRange(SUMMARYTOTALHEADERCOLLETTER + (overErrorTotalRow) + ":" + SUMMARYTOTALDATACOLLETTER + (netErrorTotalRow)).setBorder(true, true, true, true, true, true);
+  
+  // Appends Error totals
+  ssSheet.appendRow([NUMERRORSHEADER, "=SUM(" + ERRORLOGNUMERRORSLETTER + FIRSTDATAROWNUM + ":" + ERRORLOGNUMERRORSLETTER + lastErrorLogRowNum + ")"])
+  ssSheet.appendRow([OVERHEADER, "=SUM(" + ERRORLOGOVERCOLLETTER + FIRSTDATAROWNUM + ":" + ERRORLOGOVERCOLLETTER + lastErrorLogRowNum + ")"]);
+  ssSheet.appendRow([SHORTHEADER, "=SUM(" + ERRORLOGSHORTCOLLETTER + FIRSTDATAROWNUM + ":" + ERRORLOGSHORTCOLLETTER + lastErrorLogRowNum + ")"]);
+  
+  
+  if (ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + (overErrorTotalRow)).getValue() > ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + (shortErrorTotalRow)).getValue()) {
+    ssSheet.appendRow([NETERRORHEADER, '=ABS(' + SUMMARYTOTALDATACOLLETTER + (overErrorTotalRow) + '-' + SUMMARYTOTALDATACOLLETTER + shortErrorTotalRow + ') & " ' + OVERVAL + '"']);
+    ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + (netErrorTotalRow)).setBackground(OVERCOLOR);
+  }
+  else {
+    ssSheet.appendRow([NETERRORHEADER, '=ABS(' + SUMMARYTOTALDATACOLLETTER + (overErrorTotalRow) + '-' + SUMMARYTOTALDATACOLLETTER + shortErrorTotalRow + ') & " ' + SHORTVAL + '"']);
+    ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + (netErrorTotalRow)).setBackground(SHORTCOLOR);
+  }
+  
+  ssSheet.getRange(SUMMARYTOTALHEADERCOLLETTER + numErrorsTotalRow + ":" + SUMMARYTOTALDATACOLLETTER + netErrorTotalRow).setBorder(true, true, true, true, true, true);
+  
+  ssSheet.getRange(SUMMARYTOTALDATACOLLETTER + (netErrorTotalRow)).setHorizontalAlignment(SUMMARYTOTALALIGNMENT);
+  
+  // Deletes unused cells
+  var lastRow = ssSheet.getLastRow();
+  var maxRow = ssSheet.getMaxRows();
+  var lastCol = ssSheet.getLastColumn();
+  var maxCol = ssSheet.getMaxColumns();
+  if (maxRow > lastRow) {
+    ssSheet.deleteRows(lastRow+1, maxRow-lastRow);
+  }
+  if (maxCol > lastCol) {
+    ssSheet.deleteColumns(lastCol+1, maxCol-lastCol);
+  }
+  
+  resizeColumns(ssSheet);
+  
+  SpreadsheetApp.flush();
+}

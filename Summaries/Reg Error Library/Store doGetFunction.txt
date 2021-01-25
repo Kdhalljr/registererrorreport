@@ -1,0 +1,11 @@
+function storedoGetFxn () {
+  var SHEETNAME = "Form Responses";
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssName = ss.getName();
+  
+  appendStoreSSTotals(ssSheet);
+  sendEmailToMgr(ssName);
+  NotifyComplete(ssName);
+}

@@ -1,0 +1,168 @@
+function getPreviousMonth(type) {
+  if (type == "name") {
+      switch (Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMM")) {
+        case "Jan":
+          return "Dec";
+        case "Feb":
+          return "Jan";
+        case "Mar":
+          return "Feb";
+        case "Apr":
+          return "Mar";
+        case "May":
+          return "Apr";
+        case "Jun":
+          return "May";
+        case "Jul":
+          return "Jun";
+        case "Aug":
+          return "Jul";
+        case "Sep":
+          return "Aug";
+        case "Oct":
+          return "Sep";
+        case "Nov":
+          return "Oct";
+        case "Dec":
+          return "Nov";
+      }
+  }
+  else if (type == "full") {
+      switch (Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMMM")) {
+        case "January":
+          return "December";
+        case "February":
+          return "January";
+        case "March":
+          return "February";
+        case "April":
+          return "March";
+        case "May":
+          return "April";
+        case "June":
+          return "May";
+        case "July":
+          return "June";
+        case "August":
+          return "July";
+        case "September":
+          return "August";
+        case "October":
+          return "September";
+        case "November":
+          return "October";
+        case "December":
+          return "November";
+      }
+  }
+  else if (type == "num") {
+      var month = Number(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "M"));
+      if (month == 1) {
+        return 12;
+      }
+      else {
+        return (month-1).toFixed(0);
+      }
+  }
+  else {
+    throw new TypeError();
+  }
+}
+
+
+
+function getPreviousMonthsYear() {
+  if (getPreviousMonth("num") == 1) {
+    return Number(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy")) - 1;
+  }
+  else {
+    return Number(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy"));
+  }
+}
+
+
+
+function getMonth(date, type) {
+  if (type == "name") {
+    return Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), "MMM");
+  }
+  else if (type == "num") {
+    return Number(Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), "M")).toFixed(0);
+  }
+}
+
+
+
+function getYear(date) {
+    return Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), "yyyy");
+}
+
+
+
+function getFirstDayNumOfAccountingWeekOne() {
+  var JANUARYINDEX = 0;
+  var FIRSTDAYOFMONTH = 1;
+  
+  var firstDayNumberOfPeriodOne;
+  var janFirstDayOfWeek = new Date(parseInt(getPreviousMonthsYear()), JANUARYINDEX, FIRSTDAYOFMONTH).getDay();
+  
+  switch (janFirstDayOfWeek) {
+    case 0:
+      firstDayNumberOfPeriodOne = 1;
+      break;
+    case 1:
+      firstDayNumberOfPeriodOne = 7;
+      break;
+    case 2:
+      firstDayNumberOfPeriodOne = 6;
+      break;
+    case 3:
+      firstDayNumberOfPeriodOne = 5;
+      break;
+    case 4:
+      firstDayNumberOfPeriodOne = 4;
+      break;
+    case 5:
+      firstDayNumberOfPeriodOne = 3;
+      break;
+    case 6:
+      firstDayNumberOfPeriodOne = 2;
+      break;
+  }
+  
+  return firstDayNumberOfPeriodOne.toFixed(0);
+}
+
+
+
+function getAccountingPeriodNum(timestamp) {
+  //input format: Sat Jul 01 15:01:30 GMT-07:00 2017
+  var MSINDAY = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+  var MONTHINDEX = 0;
+  var DAYINDEX = 1;
+  var YEARINDEX = 2;
+  var JANNUM = 1;
+  var FIRSTDAYINMONTH = 1;
+  
+  if (typeof timestamp == "undefined") {
+    timestamp = new Date();
+  }
+
+  var date = Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "MM/dd/yyyy").toString();
+  var dateArray = date.split("/");
+
+  var dateOfTimestamp;
+  if (typeof timestamp == "undefined") {
+    dateOfTimestamp = new Date(dateArray[YEARINDEX], dateArray[MONTHINDEX], (parseInt(dateArray[DAYINDEX])-1).toString());
+  }
+  else {
+    dateOfTimestamp = new Date(dateArray[YEARINDEX], dateArray[MONTHINDEX], dateArray[DAYINDEX]);
+  }
+      
+  var firstDateOfYear = new Date(dateArray[YEARINDEX], JANNUM, FIRSTDAYINMONTH);
+
+  var dayOfYear = (Math.ceil(Math.abs((dateOfTimestamp.getTime() - firstDateOfYear.getTime())/(MSINDAY))) + 1).toFixed(0);
+  var accountingWeekNum = Math.ceil(((dayOfYear - getFirstDayNumOfAccountingWeekOne()) + 1) / 7).toFixed(0);
+  
+  return Math.ceil((accountingWeekNum * 3 ) / 13).toFixed(0);
+}

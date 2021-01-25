@@ -1,0 +1,41 @@
+function NotifyComplete(store) {
+  var SHEETNAME;
+  var STORENAMECOLUMNINDEX = 0;
+  var COMPLETIONCOLUMNNUM = 2;
+  var INDEXOFFSET = 1;
+  
+  var completionNotificationSSId = getCompletionNotificationSSId();
+  
+  if (store == "All Stores") {
+    SHEETNAME = "All Stores List";
+  }
+  else if (store == "AMontenegro"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx"|| 
+      store == "xxxxxx") {
+    SHEETNAME = "DM List";
+  }
+  else {
+    SHEETNAME = "Store List";
+  }
+  
+  var ss = SpreadsheetApp.openById(completionNotificationSSId);
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssRange = ssSheet.getDataRange();
+  var ssValues = ssRange.getValues();
+  
+  for (var i = 1; i < ssValues.length; i++) {
+    if (ssValues[i][STORENAMECOLUMNINDEX] == store) {
+      ssSheet.getRange(i+INDEXOFFSET, COMPLETIONCOLUMNNUM).setValue("Complete");
+      break;
+    }
+  }
+}

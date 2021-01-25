@@ -1,0 +1,212 @@
+// Gather Mgr, DM, and HQ Mgmt info functions
+function getMgrEmail(store) {
+  if ((store == "xxxxxx") || (store == "xxxxxx") || (store == "xxxxxx") || (store == "xxxxxx")) {
+    return store + "xxxxxx@xxxxxx.com";
+  }
+  else {
+    return store + "xxxxxx@xxxxxx.com";
+  }
+}
+
+
+
+function getStoreList() {
+  var dmList = getDMList();
+  var storeList = [];
+  
+  for (var i = 0; i < dmList.length; i++) {
+    storeList = storeList.concat(getStoreListByDM(dmList[i]))
+  }
+  
+  return storeList;
+}
+
+
+
+function getDMList() {
+  var SHEETNAME = "DM Info";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+  
+  var dmList = [];
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    dmList.push(ssSheetValues[i][HEADERROWINDEX])
+  }
+  
+  return dmList;
+}
+
+
+
+function getDMInfo(dm, infotype) {
+  var SHEETNAME = "DM Info";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+  
+  var rowToGrab;
+  
+  switch (infotype) {
+    case "name":
+      rowToGrab = 1;
+      break;
+    case "email":
+      rowToGrab = 2;
+      break;
+    case "district":
+      rowToGrab = 3;
+      break;
+  }
+  
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    if (ssSheetValues[i][HEADERROWINDEX] == dm) {
+      return ssSheetValues[i][rowToGrab];
+    }
+  }
+}
+
+
+
+function getStoreListByDM(dm) {
+  var SHEETNAME = "DM Info";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+  var ARRAYELEMENTSTOSLICE = 4;
+  
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+  
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    if (ssSheetValues[i][HEADERROWINDEX] == dm) {
+      var dmsStoreList = ssSheetValues[i].filter(function(x){
+        return (x !== (undefined || null || ''));
+      }).slice(ARRAYELEMENTSTOSLICE);
+      
+      return dmsStoreList;
+    }
+  }
+}
+
+
+
+function getDMByStore(store) {
+  var SHEETNAME = "DM Info";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+  var ARRAYELEMENTSTOSLICE = 4;
+
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+  
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    var dmsStoreList = ssSheetValues[i].filter(function(x){
+        return (x !== (undefined || null || ''));
+      }).slice(ARRAYELEMENTSTOSLICE);
+    
+    for (var j = 0; j < dmsStoreList.length; j++) {
+      if (dmsStoreList[j] == store) {
+        return ssSheetValues[i][HEADERROWINDEX];
+      }
+    }
+  }
+}
+
+
+
+function getDistrictByStore(store) {
+  var dm = getDMByStore(store);
+  return getDMInfo(dm, "district");
+}
+
+
+
+function getHMByDM(dm) {
+  var SHEETNAME = "HM By DM";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+  var ARRAYELEMENTSTOSLICE = 1;
+  
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+  
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    if (ssSheetValues[i][HEADERROWINDEX] == dm) {
+      var dmsHmsList = ssSheetValues[i].filter(function(x){
+        return (x !== (undefined || null || ''));
+      }).slice(ARRAYELEMENTSTOSLICE);
+      
+      return dmsHmsList;
+    }
+    else {
+      return [];
+    }
+  }
+}
+
+
+
+function getHQMgmtList() {
+  var SHEETNAME = "HQ Mgmt Info";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+  
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+
+  var hqMgmtInfoList = [];
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    hqMgmtInfoList.push(ssSheetValues[i][HEADERROWINDEX])
+  }
+  
+  return hqMgmtInfoList;
+}
+
+
+
+function getHQMgmtInfo(hqMgr, infotype) {
+  var SHEETNAME = "HQ Mgmt Info";
+  var FIRSTDATAROWINDEX = 1;
+  var HEADERROWINDEX = 0;
+  
+  var ss = SpreadsheetApp.openById(getMgmtInfoSSId());
+  var ssSheet = ss.getSheetByName(SHEETNAME);
+  var ssSheetRange = ssSheet.getDataRange();
+  var ssSheetValues = ssSheetRange.getValues();
+  
+  var rowToGrab;
+  
+  switch (infotype) {
+    case "name":
+      rowToGrab = 1;
+      break;
+    case "email":
+      rowToGrab = 2;
+      break;
+    case "position":
+      rowToGrab = 3;
+      break;
+  }
+  
+  for (var i = FIRSTDATAROWINDEX; i < ssSheetValues.length; i++) {
+    if (ssSheetValues[i][HEADERROWINDEX] == hqMgr) {
+      return ssSheetValues[i][rowToGrab];
+    }
+  }
+}

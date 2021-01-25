@@ -1,0 +1,102 @@
+// Creates summaries for each store
+function createStoresSummary() {
+  var ERRORREPORTHEADERROWINDEX = 0;
+  var INDEXOFFSET = 1;
+  var SPREADSHEETINDEXOFFSET = 1;
+  var DATECOLINDEX = 0;
+  var STORECODECOLINDEX = 1;
+  var FIRSTDATAROWINDEX = 1;
+  var FIRSTDATAROWNUM = 2;
+  var FIRSTCOLLETTER = "A";
+  var HEADERROWNUM = 1;
+  var OVERORSHORTCOLINDEX = 7;
+  var ERRORAMTCOLINDEX = 6;
+  var SHORTCOLOR = "red";
+  var OVERCOLOR = "green";
+  var FORMRESPONSESSHEETNAME = "Form Responses 1";
+  var STORELOGSSHEETNAME = "Form Responses";
+  var NOTIFICATIONCHECKLISTDATACOLLETTER = "B";
+  var STORESCHECKLISTSHEETNAME = "Store List";
+  var DMSCHECKLISTSHEETNAME = "DM List";
+  var ALLSTORESCHECKLISTSHEETNAME = "All Stores List";
+  
+  var storeSSMap = createSSMapping();
+  var storeSSFolder = getStoreSSFolder();
+  var storeSSFiles = storeSSFolder.getFiles();
+  
+  //var errorReportSS = SpreadsheetApp.getActiveSpreadsheet();
+  var errorReportSS = SpreadsheetApp.openById("xxxxxx")
+  var errorReportSheet = errorReportSS.getSheetByName(FORMRESPONSESSHEETNAME);
+  var errorReportRange = errorReportSheet.getDataRange();
+  var errorReportValues = errorReportRange.getValues();
+  
+  var errorReportArchiveSS = SpreadsheetApp.openById(getErrorReportArchiveSSId());
+  
+  // Clears Store, DM, and All Stores notification checklists
+  var completionNotificationSS = SpreadsheetApp.openById(getCompletionNotificationSSId())
+  var storeCompletionNotificationSSSheet = completionNotificationSS.getSheetByName(STORESCHECKLISTSHEETNAME);
+  var DMCompletionNotificationSSSheet = completionNotificationSS.getSheetByName(DMSCHECKLISTSHEETNAME);
+  var allStoresCompletionNotificationSSSheet = completionNotificationSS.getSheetByName(ALLSTORESCHECKLISTSHEETNAME);
+  storeCompletionNotificationSSSheet.getRange(NOTIFICATIONCHECKLISTDATACOLLETTER + FIRSTDATAROWNUM + ":" + NOTIFICATIONCHECKLISTDATACOLLETTER + storeCompletionNotificationSSSheet.getLastRow()).clearContent();
+  DMCompletionNotificationSSSheet.getRange(NOTIFICATIONCHECKLISTDATACOLLETTER + FIRSTDATAROWNUM + ":" + NOTIFICATIONCHECKLISTDATACOLLETTER + DMCompletionNotificationSSSheet.getLastRow()).clearContent();
+  allStoresCompletionNotificationSSSheet.getRange(NOTIFICATIONCHECKLISTDATACOLLETTER + FIRSTDATAROWNUM + ":" + NOTIFICATIONCHECKLISTDATACOLLETTER + allStoresCompletionNotificationSSSheet.getLastRow()).clearContent();
+  
+  // Delete sheet if already exists
+    var sheetNameToDelete = getPreviousMonth("name") + " " + getPreviousMonthsYear();
+    var errorReportArchiveSSSheetList = errorReportArchiveSS.getSheets();
+    for (var i = 0; i < errorReportArchiveSSSheetList.length; i++) {
+      if (errorReportArchiveSSSheetList[i].getName() == sheetNameToDelete) {
+        errorReportArchiveSS.deleteSheet(errorReportArchiveSSSheetList[i]);
+        break;
+      }
+    }
+    
+    errorReportSheet.copyTo(errorReportArchiveSS);
+    
+    var copyOfSSSheet = errorReportArchiveSS.getSheetByName("Copy of " + errorReportSheet.getName());
+    copyOfSSSheet.setName(getPreviousMonth("name") + " " + getPreviousMonthsYear());
+    errorReportArchiveSS.setActiveSheet(copyOfSSSheet);
+    errorReportArchiveSS.moveActiveSheet(1);
+  
+  // Discards old store spreadsheets data
+  while (storeSSFiles.hasNext()) {
+    var storeSSFile = storeSSFiles.next();
+    var storeSSSheet = storeSSMap[storeSSFile.getName()].getSheetByName(STORELOGSSHEETNAME);
+    var lastRow = storeSSSheet.getLastRow();
+    if(lastRow > 1) {
+      storeSSSheet.deleteRows(FIRSTDATAROWNUM, lastRow-1);
+    }
+  }
+  
+  SpreadsheetApp.flush();
+  
+  // Copies Error reports to store spreadsheets
+  for (var i = FIRSTDATAROWINDEX; i < errorReportValues.length; i++) {
+    if ((getMonth(errorReportValues[i][DATECOLINDEX], "num") == getPreviousMonth("num")) && (getYear(errorReportValues[i][DATECOLINDEX]) == getPreviousMonthsYear())) {
+        var ssSheetList = storeSSMap[errorReportValues[i][STORECODECOLINDEX]].getSheets();
+        for (var j = 0; j < ssSheetList.length; j++) {
+          if (ssSheetList[j].getName() == STORELOGSSHEETNAME) {
+            var copyToSSSheet = ssSheetList[j];
+          }
+        }
+
+        copyToSSSheet.appendRow([
+          errorReportValues[i][0],
+          getAccountingPeriodNum(errorReportValues[i][0])].concat(errorReportValues[i].slice(1)));
+        
+        if (errorReportValues[i][OVERORSHORTCOLINDEX] == "Short") {
+          copyToSSSheet.getRange(columnToLetter(ERRORAMTCOLINDEX+INDEXOFFSET) + copyToSSSheet.getLastRow() + ":" + columnToLetter(OVERORSHORTCOLINDEX+INDEXOFFSET) + copyToSSSheet.getLastRow()).setBackground(SHORTCOLOR);
+        }
+        else if (errorReportValues[i][OVERORSHORTCOLINDEX] == "Over") {
+          copyToSSSheet.getRange(columnToLetter(ERRORAMTCOLINDEX+INDEXOFFSET) + copyToSSSheet.getLastRow() + ":" + columnToLetter(OVERORSHORTCOLINDEX+INDEXOFFSET) + copyToSSSheet.getLastRow()).setBackground(OVERCOLOR);
+        }
+    }
+  }
+  
+  SpreadsheetApp.flush();
+  
+  // Discards data on error report sheet
+  //errorReportSheet.getRange(FIRSTCOLLETTER + FIRSTDATAROWNUM + ":" + errorReportSheet.getLastColumn() + errorReportSheet.getLastRow()).clear();
+  
+  SpreadsheetApp.flush();
+}

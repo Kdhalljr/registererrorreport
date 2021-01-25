@@ -1,0 +1,11 @@
+function allStoresdoGetFxn() {
+  var FIRSTSTORESUMMARYINDEX = 1;
+  
+  var storeSSMap = createSSMapping();
+
+  var storeSSMap = sortHashArray(storeSSMap)
+
+  createMultipleStoresSummary("All Stores", storeSSMap);
+  sendEmailToHQMgmt();
+  NotifyComplete("All Stores");
+}
